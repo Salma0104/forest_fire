@@ -131,6 +131,7 @@ class Grid2D(Grid):
         s = nhood_arr[2, 1] * grid[2:, 1:-1]
         se = nhood_arr[2, 2] * grid[2:, 2:]
         return np.array([nw, n, ne, w, e, sw, s, se])
+        # return np.array([n, w, e, s])
 
     def count_neighbours(self, neighbour_states):
         """
