@@ -59,6 +59,9 @@ def setup(args):
     config.states = (0,1,2,3,4,5,6,7,8,9,10)
     config.state_colors = [(0.74,0.737,0.027),(0.024,0.68,0.933),(0.314,0.392,0.165),(0.984,0.988,0.024),(0,0,0),(1,0,0),(1,0,0),(1,0,0),(1,0,0),(1,0,0),(0.5,0.5,0.5)]
     config.initial_grid = create_map()
+    ##
+    config.durations = (np.zeros((200,200)) - np.ones((200,200)))
+    ##
     if not config.num_generations:
         config.num_generations = 700
     config.wrap =False
@@ -99,7 +102,7 @@ apply_probability_burnt = np.vectorize(lambda x: 1 if p_change(probabilities_2_b
 ''''Outputs 1 or 0 where 1 is outputted with a probability of "probability"  '''
 p_change2_vec = np.vectorize(lambda x: np.random.choice(np.array([1, 0]), p=[x,(1-x)]))
 
-def transition_function(grid, neighbourstates, neighbourcounts):
+def transition_function(grid, neighbourstates, neighbourcounts, durations):
     # each variable stores the 200x200 array corresponding to the direction to center cell
     NW, N, NE, W, E, SW, S, SE = neighbourstates
     # cells currently in state 0-4 NOT lake
@@ -150,14 +153,69 @@ def transition_function(grid, neighbourstates, neighbourcounts):
     #for every element in grid thats equal to 1 in p_grid, change its state to burning (add 5)
     grid[p_grid==1] += 5
 
-    p_grid[:,:] = 0
 
-    p_grid[to_burnt] = grid[to_burnt]
-    if p_grid[to_burnt].size > 0:
+    #set all the newly burning cells to their respective durations:
 
-        #using the state stored it outputs either 1 or 0 e.g. [1,3] might equal [0,1]
-        p_grid[to_burnt] = apply_probability_burnt(p_grid[to_burnt])
-    grid[p_grid==1] = 10
+    newlyBurntChappral = (durations == -1) & (grid == 5) #because -1 means duration not set, so we are yet to set these burning ones (s5)
+    newlyBurntForest = (durations == -1) & (grid == 7)
+    newlyBurntCanyon = (durations == -1) & (grid == 8)
+    newlyBurntTown = (durations == -1) & (grid == 9)
+    
+    #setting durations
+    #one iteration is 15 mins
+    durations[newlyBurntChappral] = np.random.randint((60/15 * 2), (60/15 * 8))
+    durations[newlyBurntForest] = np.random.randint((60/15 * 24 * 2), (60/15 * 24 * 30)) #2 days to 30 days
+    durations[newlyBurntTown] = 1
+    durations[newlyBurntCanyon] = 1
+    #decrement all durations by 1:
+
+    durations[durations > 0] -= 1
+
+    #make a burnt out cell if duration is 0
+
+    burntOut = (durations == 0)
+    print(durations)
+    grid[burntOut] = 10 #10 is burnt state
+
+    # #durations: #we are setting these in the wrong location, it gets overrided each time
+
+    # newBurning = (p_grid == 1)
+
+    # burningChappral = (grid[newBurning] == 5) #we do p_grid here because we only want to set the durations of things that just started burning
+    # durations[burningChappral] = 2 #2 iterations (2 hrs??)
+
+    # burningForest = (grid[newBurning]== 7)
+    # durations[burningForest] = 100
+
+    # burningLake = (grid[newBurning] == 6)
+    # durations[burningLake] = 0 #doesnt burn
+
+    # burningCanyon = (grid[newBurning] == 8)
+    # durations[burningCanyon] = 1
+
+    # burningTown = (grid[newBurning] == 9)
+    # durations[burningTown] = 10
+
+    # #decrement all durations by 1
+
+    # durations = durations - np.ones((200,200))
+
+    # #turn fire off if duration ran out
+
+    # ranOut = (durations <= 0)
+    # grid[ranOut] -= 5
+
+
+    ###########
+
+    # p_grid[:,:] = 0
+
+    # p_grid[to_burnt] = grid[to_burnt]
+    # if p_grid[to_burnt].size > 0:
+
+    #     #using the state stored it outputs either 1 or 0 e.g. [1,3] might equal [0,1]
+    #     p_grid[to_burnt] = apply_probability_burnt(p_grid[to_burnt])
+    # grid[p_grid==1] = 10
 
     return grid
 

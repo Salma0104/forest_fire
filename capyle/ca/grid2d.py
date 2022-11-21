@@ -131,7 +131,6 @@ class Grid2D(Grid):
         s = nhood_arr[2, 1] * grid[2:, 1:-1]
         se = nhood_arr[2, 2] * grid[2:, 2:]
         return np.array([nw, n, ne, w, e, sw, s, se])
-        # return np.array([n, w, e, s])
 
     def count_neighbours(self, neighbour_states):
         """
@@ -161,13 +160,18 @@ class Grid2D(Grid):
         # return n arrays where n is the number of states
         nc = self.count_neighbours(ns)
 
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        durs = self.ca_config.durations
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         # apply the user's transition function
         # passing in the states and counts to allow complex rules
         # if the user supplied any addition arguments, pass them here
         if self.additional_args is None:
-            self.grid = self.transition_func(self.grid, ns, nc)
+            self.grid = self.transition_func(self.grid, ns, nc, durs)
         else:
-            self.grid = self.transition_func(self.grid, ns, nc,
+            self.grid = self.transition_func(self.grid, ns, nc, durs, ####
                                              *self.additional_args)
         # refresh wrapping border
         self.refresh_wrap()
