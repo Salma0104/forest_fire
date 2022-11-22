@@ -17,7 +17,7 @@ from capyle.ca import Grid2D, Neighbourhood, randomise2d
 import capyle.utils as utils
 
 #Dict that sores the probability that each state will burn
-probabilities_2_burn = {0:0.08,1:0.05,2:0.6,3:0,4:0.2,5:0.8,6:0.8}
+probabilities_2_burn = {0:0.01,1:0.01,2:0.6,3:0,4:0.2,5:0.8,6:0.8}
 
 #Dict that sores the probability that each state will stop burning (become burnt)
 #probabilities_2_burnt = {5:1/24,7:1/720,8:1,8:1}
@@ -29,6 +29,15 @@ probabilities_2_burn = {0:0.08,1:0.05,2:0.6,3:0,4:0.2,5:0.8,6:0.8}
 wind_opp = {'N':[5,6,7], 'NE':[3,5,6], 'E':[0,3,5], 'SE':[1,0,3], 'S':[0,1,2], 'SW':[1,2,4], 'W':[2,4,7], 'NW':[4,7,6]}
 
 wind_direction = 'W'
+
+def diagonal_water(start,grid):
+    for i in range(35):
+        grid[start[0],start[1]] = 0
+        start[0] += 1
+        start[1] += 1
+    return grid
+
+
 
 def create_map():
     #initially set everything to unburnt chaparral state(0,0)
@@ -47,6 +56,7 @@ def create_map():
     grid[0,199] = 7
     #draw the damp cells
     grid[140,101:152] = 0
+    grid = diagonal_water([0,165],grid)
     #grid[0:150,50:100] = 12
     return grid
 
@@ -180,7 +190,6 @@ def transition_function(grid, neighbourstates, neighbourcounts, durations):
     #make a burnt out cell if duration is 0
 
     burntOut = (durations == 0)
-    print(durations)
     grid[burntOut] = 12 #10 is burnt state
 
     #damp states:
