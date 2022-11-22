@@ -17,10 +17,10 @@ from capyle.ca import Grid2D, Neighbourhood, randomise2d
 import capyle.utils as utils
 
 #Dict that sores the probability that each state will burn
-probabilities_2_burn = {0:0.6,1:0,2:0.2,3:0.8,4:0.8}
+probabilities_2_burn = {0:0.08,1:0.05,2:0.6,3:0,4:0.2,5:0.8,6:0.8}
 
 #Dict that sores the probability that each state will stop burning (become burnt)
-probabilities_2_burnt = {5:1/24,7:1/720,8:1,8:1}
+#probabilities_2_burnt = {5:1/24,7:1/720,8:1,8:1}
 
 
 # NW=0, N=1, NE=2, W=3, E=4, SW=5, S=6, SE=7
@@ -32,19 +32,22 @@ wind_direction = 'W'
 
 def create_map():
     #initially set everything to unburnt chaparral state(0,0)
-    grid = np.zeros((200,200))
+    grid = np.zeros((200,200)) + (np.ones((200,200)) * 2)
     #draw the lake
-    grid[70:80,20:101] = 1
+    grid[70:80,20:101] = 3
     # draw the dense forest
-    grid[20:70,60:101] = 2
-    grid[80:141,0:101] = 2
+    grid[20:70,60:101] = 4
+    grid[80:141,0:101] = 4
     #draw the canyon
-    grid[20:160,120:131] = 3
+    grid[20:160,120:131] = 5
     #draw the town
-    grid[175:186,75:86] = 4
+    grid[175:186,75:86] = 6
     #set top corners on fire
     #grid[0,0] = 5
-    grid[0,199] = 5
+    grid[0,199] = 7
+    #draw the damp cells
+    grid[140,101:152] = 0
+    #grid[0:150,50:100] = 12
     return grid
 
 def setup(args):
@@ -54,10 +57,11 @@ def setup(args):
     # -- THE CA MUST BE RELOADED IN THE GUI IF ANY OF THE BELOW ARE CHANGED --
     config.title = f"Forest Fire Simulation, Direction:{wind_direction}"
     config.dimensions = 2
-    # 0-4 -> [chapparal, lake, forest, canyon, town], 5-9 ->[chapparal on fire, lake on fire, forest on fire, canyon on fire, town on fire]
-    # 10 -> burnt out
-    config.states = (0,1,2,3,4,5,6,7,8,9,10)
-    config.state_colors = [(0.74,0.737,0.027),(0.024,0.68,0.933),(0.314,0.392,0.165),(0.984,0.988,0.024),(0,0,0),(1,0,0),(1,0,0),(1,0,0),(1,0,0),(1,0,0),(0.5,0.5,0.5)]
+    # 0-1 -> [damp chappral, damp forrest]
+    # 2-6 -> [chapparal, lake, forest, canyon, town], 7-11 ->[chapparal on fire, lake on fire, forest on fire, canyon on fire, town on fire]
+    # 12 -> burnt out
+    config.states = (0,1,2,3,4,5,6,7,8,9,10,11,12)
+    config.state_colors = [(0,0.05,0.8),(0,0.2,0.9),(0.74,0.737,0.027),(0.024,0.68,0.933),(0.314,0.392,0.165),(0.984,0.988,0.024),(0,0,0),(1,0,0),(1,0,0),(1,0,0),(1,0,0),(1,0,0),(0.5,0.5,0.5)]
     config.initial_grid = create_map()
     ##
     config.durations = (np.zeros((200,200)) - np.ones((200,200)))
@@ -106,16 +110,16 @@ def transition_function(grid, neighbourstates, neighbourcounts, durations):
     # each variable stores the 200x200 array corresponding to the direction to center cell
     NW, N, NE, W, E, SW, S, SE = neighbourstates
     # cells currently in state 0-4 NOT lake
-    unburnt = (grid == 0) | (grid == 2) | (grid == 3) | (grid == 4) 
+    unburnt = (grid == 0) | (grid == 1) | (grid == 2) | (grid==4) | (grid==5) | (grid==6)
     # adjacent states in states > 4 (Moore)
-    burning = (N > 4) | (W > 4) | (S > 4) | (E > 4)|(NE > 4) | (SE > 4) | (NW > 4) | (SW > 4) 
+    burning = (N > 6) | (W > 6) | (S > 6) | (E > 6)|(NE > 6) | (SE > 6) | (NW > 6) | (SW > 6) 
     # union the results
     to_burning = unburnt & burning 
 
     p_grid = np.zeros((200,200))
 
     # cells currently in state 5-9 NOT lake
-    to_burnt = (grid == 5) | (grid == 7) | (grid == 8) | (grid == 9) 
+    to_burnt = (grid == 7) | (grid == 9) | (grid == 10) | (grid==11)
 
     #wind_affect = unburnt & (neighbourstates[wind_opp.get(wind_direction)] > 4) # cells were the wind blows in their direction
 
@@ -123,15 +127,15 @@ def transition_function(grid, neighbourstates, neighbourcounts, durations):
     right_diag, adjacent, left_diag = wind_opp.get(wind_direction)
 
     #boolean mask thats true for all cells where the adjacent neighbour is not burning.
-    center_not_burning = (neighbourstates[adjacent] <= 4) 
+    center_not_burning = (neighbourstates[adjacent] <= 6)
     # boolean mask where only diagonal neighbours are burning
-    diagonal_burning = ((neighbourstates[right_diag] > 4) | (neighbourstates[left_diag] > 4)) & center_not_burning 
+    diagonal_burning = ((neighbourstates[right_diag] > 6) | (neighbourstates[left_diag] > 6)) & center_not_burning 
     # boolean mask where adjacent neighbour is burning but diagonals can also burn
-    adjacent_burning = (neighbourstates[adjacent] > 4)
+    adjacent_burning = (neighbourstates[adjacent] > 6)
 
 
     # boolean mask where any from diagonals and adjacent are burning
-    uniform_wind_affect = (neighbourstates[right_diag] > 4) | (neighbourstates[left_diag] > 4) | (neighbourstates[adjacent]>4)
+    uniform_wind_affect = (neighbourstates[right_diag] > 6) | (neighbourstates[left_diag] > 6) | (neighbourstates[adjacent]>6)
 
     #p_grid will only store states for specified subarray
     p_grid[to_burning] = grid[to_burning]
@@ -151,15 +155,17 @@ def transition_function(grid, neighbourstates, neighbourcounts, durations):
         p_grid[to_burning] = p_change2_vec(p_grid[to_burning])
     
     #for every element in grid thats equal to 1 in p_grid, change its state to burning (add 5)
+    plant = (p_grid==1) & ((grid==0) | (grid==1))
+    grid[plant] += 2
     grid[p_grid==1] += 5
 
 
     #set all the newly burning cells to their respective durations:
 
-    newlyBurntChappral = (durations == -1) & (grid == 5) #because -1 means duration not set, so we are yet to set these burning ones (s5)
-    newlyBurntForest = (durations == -1) & (grid == 7)
-    newlyBurntCanyon = (durations == -1) & (grid == 8)
-    newlyBurntTown = (durations == -1) & (grid == 9)
+    newlyBurntChappral = (durations == -1) & (grid == 7) #because -1 means duration not set, so we are yet to set these burning ones (s5)
+    newlyBurntForest = (durations == -1) & (grid == 9)
+    newlyBurntCanyon = (durations == -1) & (grid == 10)
+    newlyBurntTown = (durations == -1) & (grid == 11)
     
     #setting durations
     #one iteration is 15 mins
@@ -175,47 +181,13 @@ def transition_function(grid, neighbourstates, neighbourcounts, durations):
 
     burntOut = (durations == 0)
     print(durations)
-    grid[burntOut] = 10 #10 is burnt state
+    grid[burntOut] = 12 #10 is burnt state
 
-    # #durations: #we are setting these in the wrong location, it gets overrided each time
-
-    # newBurning = (p_grid == 1)
-
-    # burningChappral = (grid[newBurning] == 5) #we do p_grid here because we only want to set the durations of things that just started burning
-    # durations[burningChappral] = 2 #2 iterations (2 hrs??)
-
-    # burningForest = (grid[newBurning]== 7)
-    # durations[burningForest] = 100
-
-    # burningLake = (grid[newBurning] == 6)
-    # durations[burningLake] = 0 #doesnt burn
-
-    # burningCanyon = (grid[newBurning] == 8)
-    # durations[burningCanyon] = 1
-
-    # burningTown = (grid[newBurning] == 9)
-    # durations[burningTown] = 10
-
-    # #decrement all durations by 1
-
-    # durations = durations - np.ones((200,200))
-
-    # #turn fire off if duration ran out
-
-    # ranOut = (durations <= 0)
-    # grid[ranOut] -= 5
+    #damp states:
+    
 
 
-    ###########
 
-    # p_grid[:,:] = 0
-
-    # p_grid[to_burnt] = grid[to_burnt]
-    # if p_grid[to_burnt].size > 0:
-
-    #     #using the state stored it outputs either 1 or 0 e.g. [1,3] might equal [0,1]
-    #     p_grid[to_burnt] = apply_probability_burnt(p_grid[to_burnt])
-    # grid[p_grid==1] = 10
 
     return grid
 
