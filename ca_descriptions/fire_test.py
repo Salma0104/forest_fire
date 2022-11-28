@@ -27,13 +27,22 @@ wind_opp = {'N':[5,6,7], 'NE':[3,5,6], 'E':[0,3,5], 'SE':[1,0,3], 'S':[0,1,2], '
 
 damp_plant_duration = np.zeros((200,200)) - 1
 
-wind_direction = 'S'
+wind_direction = 'SW'
 
 def diagonal_water(start,grid):
     for i in range(35):
         grid[start[0],start[1]] = 1
         start[0] += 1
         start[1] += 1
+    return grid
+
+def diagonal_forest(start,grid,direction,length):
+    #start = (i1,i2,j1,j2)
+    for i in range(length):
+        grid[start[0],start[1]:start[2]] = 5
+        start[0] += direction
+        start[1] += 1
+        start[2] += 1
     return grid
 
 
@@ -55,9 +64,14 @@ def create_map():
     grid[0,199] = 8
     #draw the damp cells
     #grid[140,101:152] = 1
-    grid = diagonal_water([0,165],grid)
+    #grid = diagonal_water([0,165],grid)
     #grid = diagonal_water([135,101],grid)
     #grid[0:150,50:100] = 1
+
+    #dense forest around canyon
+    grid = diagonal_forest([141,75,101],grid,1,59)
+
+
     return grid
 
 def setup(args):
@@ -76,7 +90,7 @@ def setup(args):
     config.durations = (np.zeros((200,200)) - np.ones((200,200)))
     ##
     if not config.num_generations:
-        config.num_generations = 400
+        config.num_generations = 1
     config.wrap =False
     
     # -------------------------------------------------------------------------
