@@ -17,7 +17,12 @@ from capyle.ca import Grid2D, Neighbourhood, randomise2d
 import capyle.utils as utils
 
 #Dict that sores the probability that each state will burn
-probabilities_2_burn = {3:0.6,4:0,5:0.2,6:0.9,7:1}
+chappral_prob = 0.71
+relative_canyon = 1.35 * chappral_prob
+relative_forrest = 0.16 * chappral_prob
+
+
+probabilities_2_burn = {3:chappral_prob,4:0,5:relative_forrest,6:relative_canyon,7:1}
 
 
 # NW=0, N=1, NE=2, W=3, E=4, SW=5, S=6, SE=7
@@ -27,7 +32,7 @@ wind_opp = {'N':[5,6,7], 'NE':[3,5,6], 'E':[0,3,5], 'SE':[1,0,3], 'S':[0,1,2], '
 
 damp_plant_duration = np.zeros((200,200)) - 1
 
-wind_direction = 'S'
+wind_direction = 'W'
 
 def diagonal_water(start,grid):
     for i in range(35):
@@ -36,11 +41,22 @@ def diagonal_water(start,grid):
         start[1] += 1
     return grid
 
-
+def diagonal_forrest(start,grid,direction,length):
+    for i in range(35):
+        grid[start[0],start[1]:start[2]] = 5
+        start[0] += direction
+        start[1] += 1
+        start[2] += 1
+    return grid
 
 def create_map():
     #initially set everything to unburnt chaparral state(0,0)
+
+    #--- default all chappral
     grid = np.zeros((200,200)) + 3
+    #grid[99,99] = 8
+    #------ 
+    
     #draw the lake
     grid[70:80,20:101] = 4
     # draw the dense forest
@@ -54,10 +70,13 @@ def create_map():
     #grid[0,0] = 8
     grid[0,199] = 8
     #draw the damp cells
-    #grid[140,101:152] = 1
-    grid = diagonal_water([0,165],grid)
-    #grid = diagonal_water([135,101],grid)
-    #grid[0:150,50:100] = 1
+    # grid[140,101:152] = 1
+    # grid = diagonal_water([0,165],grid)
+    # grid = diagonal_water([135,101],grid)
+    # grid[0:150,50:100] = 1
+
+    #grid = diagonal_forrest([141,75,101],grid,1,59)
+
     return grid
 
 def setup(args):
@@ -76,7 +95,7 @@ def setup(args):
     config.durations = (np.zeros((200,200)) - np.ones((200,200)))
     ##
     if not config.num_generations:
-        config.num_generations = 400
+        config.num_generations = 700
     config.wrap =False
     
     # -------------------------------------------------------------------------
@@ -119,10 +138,10 @@ def catch_fire(grid,burn_mask,adjacent_wind_mask,diagonal_wind_mask):
     if p_grid[burn_mask].size > 0:
         #changes each state in subarray to its p value where p = probability to burn e.g [1,4] = [0,0.8]
         p_grid[burn_mask] = apply_probability_burn(p_grid[burn_mask])
-        p_grid[burn_mask] *= 0.5
+        p_grid[burn_mask] *= 0.4 #penalty for wind blowing the wrong way
 
-        p_grid[adjacent_wind_mask]  =  (p_grid[adjacent_wind_mask] /0.5) * 1.25
-        p_grid[diagonal_wind_mask]  =  (p_grid[diagonal_wind_mask] /0.5) * 1.05
+        p_grid[adjacent_wind_mask]  =  (p_grid[adjacent_wind_mask] /0.4) * 10 #make the wind blowing the right way stronger
+        p_grid[diagonal_wind_mask]  =  (p_grid[diagonal_wind_mask] /0.4) * 0.9
 
         #using the probability stored it outputs either 1 or 0 e.g. [0,0.8] might equal [0,1]
         p_grid[p_grid > 1] = 1
@@ -180,8 +199,8 @@ def transition_function(grid, neighbourstates, neighbourcounts, durations):
     
     #setting durations
     #one iteration is 15 mins
-    durations[newlyBurntChappral] = 96 #np.random.randint((60/15 * 2), (60/15 * 8))
-    durations[newlyBurntForest] = 2880 # np.random.randint((60/15 * 24 * 2), (60/15 * 24 * 30)) #2 days to 30 days
+    durations[newlyBurntChappral] = np.random.randint((60/15 * 6), (60/15 * 24 * 2))
+    durations[newlyBurntForest] = np.random.randint((60/15 * 24 * 7), (60/15 * 24 * 30)) #7 days to 30 days
     durations[newlyBurntTown] = 2
     durations[newlyBurntCanyon] = 10
     #decrement all durations by 1:
