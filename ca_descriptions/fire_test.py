@@ -32,7 +32,7 @@ wind_opp = {'N':[5,6,7], 'NE':[3,5,6], 'E':[0,3,5], 'SE':[1,0,3], 'S':[0,1,2], '
 
 damp_plant_duration = np.zeros((200,200)) - 1
 
-wind_direction = 'W'
+wind_direction = 'SE'
 
 def diagonal_water(start,grid):
     for i in range(35):
@@ -41,8 +41,8 @@ def diagonal_water(start,grid):
         start[1] += 1
     return grid
 
-def diagonal_forrest(start,grid,direction,length):
-    for i in range(35):
+def diagonal_forest(start,grid,direction,length):
+    for i in range(length):
         grid[start[0],start[1]:start[2]] = 5
         start[0] += direction
         start[1] += 1
@@ -54,7 +54,6 @@ def create_map():
 
     #--- default all chappral
     grid = np.zeros((200,200)) + 3
-    #grid[99,99] = 8
     #------ 
     
     #draw the lake
@@ -75,7 +74,7 @@ def create_map():
     # grid = diagonal_water([135,101],grid)
     # grid[0:150,50:100] = 1
 
-    #grid = diagonal_forrest([141,75,101],grid,1,59)
+    #grid = diagonal_forest([141,75,101],grid,1,59)
 
     return grid
 
