@@ -38,7 +38,7 @@ CAPyLE is licensed under a BSD licence, the terms of which can be found in the L
 
 Copyright 2017 Peter Worsley
 
-## Changes made for COM3524 assignment
+## Changes made for assignment
 - [**`forest_fire_spread`**](/ca_descriptions/forest_fire_spread.py) <- assignment file - shows spread of forest fire . Follow instructions in Usage to run.
 ### Grid layout
 ![image](https://github.com/acb19sh/com3524/assets/93203488/5f9073f3-1e12-437b-9f62-301a2646c459)
